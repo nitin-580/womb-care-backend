@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { DatabaseAdapter, User, CreateUserInput, RegistrationStats, PaginatedResult, Blog, CreateBlogInput, UpdateBlogInput } from './interfaces';
+import { DatabaseAdapter, User, CreateUserInput, RegistrationStats, PaginatedResult, Blog, CreateBlogInput, UpdateBlogInput, Career, CreateCareerInput, UpdateCareerInput } from './interfaces';
 import { env } from '../config/env';
 
 export class SupabaseAdapter implements DatabaseAdapter {
@@ -49,7 +49,11 @@ export class SupabaseAdapter implements DatabaseAdapter {
       id: row.id,
       title: row.title,
       content: row.content,
+      contentType: row.content_type,
+      excerpt: row.excerpt,
+      coverImage: row.cover_image,
       authorName: row.author_name,
+      published: row.published,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     };
@@ -60,7 +64,11 @@ export class SupabaseAdapter implements DatabaseAdapter {
     const row: any = {};
     if (blog.title) row.title = blog.title;
     if (blog.content) row.content = blog.content;
+    if (blog.contentType) row.content_type = blog.contentType;
+    if (blog.excerpt !== undefined) row.excerpt = blog.excerpt;
+    if (blog.coverImage !== undefined) row.cover_image = blog.coverImage;
     if (blog.authorName) row.author_name = blog.authorName;
+    if (blog.published !== undefined) row.published = blog.published;
     return row;
   }
 
@@ -216,6 +224,110 @@ export class SupabaseAdapter implements DatabaseAdapter {
 
     if (error) {
       throw new Error(`Failed to delete blog: ${error.message}`);
+    }
+  }
+
+  // Career operations implementation
+  private mapToCareer(row: any): Career {
+    return {
+      id: row.id,
+      title: row.title,
+      department: row.department,
+      location: row.location,
+      type: row.type,
+      description: row.description,
+      requirements: row.requirements || [],
+      active: row.active,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  }
+
+  private mapToCareerDbRow(career: CreateCareerInput | UpdateCareerInput) {
+    const row: any = {};
+    if (career.title) row.title = career.title;
+    if (career.department) row.department = career.department;
+    if (career.location) row.location = career.location;
+    if (career.type) row.type = career.type;
+    if (career.description) row.description = career.description;
+    if (career.requirements) row.requirements = career.requirements;
+    if (career.active !== undefined) row.active = career.active;
+    return row;
+  }
+
+  async createCareer(career: CreateCareerInput): Promise<Career> {
+    const { data, error } = await this.supabase
+      .from('careers')
+      .insert(this.mapToCareerDbRow(career))
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to create career: ${error.message}`);
+    }
+
+    return this.mapToCareer(data);
+  }
+
+  async getCareerById(id: string): Promise<Career | null> {
+    const { data, error } = await this.supabase
+      .from('careers')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      throw new Error(`Failed to fetch career by id: ${error.message}`);
+    }
+
+    return data ? this.mapToCareer(data) : null;
+  }
+
+  async getPaginatedCareers(page: number, limit: number): Promise<PaginatedResult<Career>> {
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    const { data, error, count } = await this.supabase
+      .from('careers')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (error) {
+      throw new Error(`Failed to fetch paginated careers: ${error.message}`);
+    }
+
+    return {
+      data: data.map(this.mapToCareer),
+      total: count || 0,
+      page,
+      limit,
+    };
+  }
+
+  async updateCareer(id: string, career: UpdateCareerInput): Promise<Career> {
+    const { data, error } = await this.supabase
+      .from('careers')
+      .update(this.mapToCareerDbRow(career))
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to update career: ${error.message}`);
+    }
+
+    return this.mapToCareer(data);
+  }
+
+  async deleteCareer(id: string): Promise<void> {
+    const { error } = await this.supabase
+      .from('careers')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(`Failed to delete career: ${error.message}`);
     }
   }
 }

@@ -7,6 +7,14 @@ import { adminAuth } from '../middleware/adminAuth';
 import { BlogController } from '../controllers/blogController';
 import { BlogService } from '../services/blogService';
 import { BlogRepository } from '../repositories/blogRepository';
+import { CareerController } from '../controllers/careerController';
+import { CareerService } from '../services/careerService';
+import { CareerRepository } from '../repositories/careerRepository';
+import { UploadController } from '../controllers/uploadController';
+import { StorageService } from '../services/storageService';
+import multer from 'multer';
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 const router = Router();
 
@@ -19,6 +27,13 @@ const adminController = new AdminController(adminService);
 const blogRepository = new BlogRepository(dbAdapter);
 const blogService = new BlogService(blogRepository);
 const blogController = new BlogController(blogService);
+
+const careerRepository = new CareerRepository(dbAdapter);
+const careerService = new CareerService(careerRepository);
+const careerController = new CareerController(careerService);
+
+const storageService = new StorageService();
+const uploadController = new UploadController(storageService);
 
 // Apply admin authentication middleware to all admin routes
 router.use(adminAuth);
@@ -33,5 +48,15 @@ router.get('/blogs/:id', blogController.getBlog);
 router.post('/blogs', blogController.createBlog);
 router.patch('/blogs/:id', blogController.updateBlog);
 router.delete('/blogs/:id', blogController.deleteBlog);
+
+// Admin Media Upload
+router.post('/upload', upload.single('image'), uploadController.uploadImage);
+
+// Admin Career management
+router.get('/careers', careerController.getCareers);
+router.get('/careers/:id', careerController.getCareer);
+router.post('/careers', careerController.createCareer);
+router.patch('/careers/:id', careerController.updateCareer);
+router.delete('/careers/:id', careerController.deleteCareer);
 
 export default router;

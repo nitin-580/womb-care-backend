@@ -8,7 +8,15 @@ export class BlogService {
     if (!blog.title || !blog.content || !blog.authorName) {
       throw new Error('Title, content, and author name are required');
     }
-    return this.blogRepository.create(blog);
+    
+    // Default to HTML if not specified
+    const blogData = {
+      ...blog,
+      contentType: blog.contentType || 'html',
+      published: blog.published !== undefined ? blog.published : true
+    };
+
+    return this.blogRepository.create(blogData);
   }
 
   async getBlogById(id: string): Promise<Blog> {

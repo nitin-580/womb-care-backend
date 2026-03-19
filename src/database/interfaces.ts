@@ -3,7 +3,11 @@ export interface Blog {
   id: string;
   title: string;
   content: string;
+  contentType: 'html' | 'json';
+  excerpt?: string;
+  coverImage?: string;
   authorName: string;
+  published: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -35,6 +39,22 @@ export interface RegistrationStats {
   thisMonth: number;
 }
 
+export interface Career {
+  id: string;
+  title: string;
+  department: string;
+  location: string;
+  type: 'Full-time' | 'Part-time' | 'Contract' | 'Internship';
+  description: string;
+  requirements: string[]; // Store as JSON array in DB
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateCareerInput = Omit<Career, 'id' | 'createdAt' | 'updatedAt'>;
+export type UpdateCareerInput = Partial<CreateCareerInput>;
+
 export interface PaginatedResult<T> {
   data: T[];
   total: number;
@@ -55,4 +75,11 @@ export interface DatabaseAdapter {
   getPaginatedBlogs(page: number, limit: number): Promise<PaginatedResult<Blog>>;
   updateBlog(id: string, blog: UpdateBlogInput): Promise<Blog>;
   deleteBlog(id: string): Promise<void>;
+
+  // Career operations
+  createCareer(career: CreateCareerInput): Promise<Career>;
+  getCareerById(id: string): Promise<Career | null>;
+  getPaginatedCareers(page: number, limit: number): Promise<PaginatedResult<Career>>;
+  updateCareer(id: string, career: UpdateCareerInput): Promise<Career>;
+  deleteCareer(id: string): Promise<void>;
 }

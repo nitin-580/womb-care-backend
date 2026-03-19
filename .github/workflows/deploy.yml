@@ -36,4 +36,14 @@ jobs:
           source: ./
           flags: |
             --allow-unauthenticated
-            --env-vars-file=.env.cloudrun.yaml
+          env_vars: |
+            NODE_ENV=production
+            CORS_ORIGIN=*
+            SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+            SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+            SMTP_HOST=smtp.mailtrap.io
+            SMTP_PORT=2525
+            SMTP_USER=${{ secrets.SMTP_USER }}
+            SMTP_PASS=${{ secrets.SMTP_PASS }}
+            EMAIL_FROM=hello@earlyaccess.com
+            ADMIN_API_KEY=${{ secrets.ADMIN_API_KEY }}

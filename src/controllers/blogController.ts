@@ -29,6 +29,19 @@ export class BlogController {
     }
   };
 
+  getBlogBySlug = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { slug } = req.params;
+      const blog = await this.blogService.getBlogBySlug(slug as string);
+      res.json({
+        success: true,
+        data: blog
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   getBlogs = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const page = parseInt(req.query.page as string) || 1;

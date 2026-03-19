@@ -8,6 +8,7 @@ export interface Blog {
   coverImage?: string;
   authorName: string;
   published: boolean;
+  slug: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -72,6 +73,7 @@ export interface DatabaseAdapter {
   // Blog operations
   createBlog(blog: CreateBlogInput): Promise<Blog>;
   getBlogById(id: string): Promise<Blog | null>;
+  getBlogBySlug(slug: string): Promise<Blog | null>;
   getPaginatedBlogs(page: number, limit: number): Promise<PaginatedResult<Blog>>;
   updateBlog(id: string, blog: UpdateBlogInput): Promise<Blog>;
   deleteBlog(id: string): Promise<void>;

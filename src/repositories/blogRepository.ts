@@ -11,6 +11,10 @@ export class BlogRepository {
     return this.db.getBlogById(id);
   }
 
+  async getBySlug(slug: string): Promise<Blog | null> {
+    return this.db.getBlogBySlug(slug);
+  }
+
   async getPaginated(page: number, limit: number): Promise<PaginatedResult<Blog>> {
     return this.db.getPaginatedBlogs(page, limit);
   }

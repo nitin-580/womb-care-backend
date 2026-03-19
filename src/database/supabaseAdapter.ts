@@ -54,6 +54,7 @@ export class SupabaseAdapter implements DatabaseAdapter {
       coverImage: row.cover_image,
       authorName: row.author_name,
       published: row.published,
+      slug: row.slug,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     };
@@ -69,6 +70,7 @@ export class SupabaseAdapter implements DatabaseAdapter {
     if (blog.coverImage !== undefined) row.cover_image = blog.coverImage;
     if (blog.authorName) row.author_name = blog.authorName;
     if (blog.published !== undefined) row.published = blog.published;
+    if (blog.slug) row.slug = blog.slug;
     return row;
   }
 
@@ -174,6 +176,20 @@ export class SupabaseAdapter implements DatabaseAdapter {
 
     if (error && error.code !== 'PGRST116') {
       throw new Error(`Failed to fetch blog by id: ${error.message}`);
+    }
+
+    return data ? this.mapToBlog(data) : null;
+  }
+  
+  async getBlogBySlug(slug: string): Promise<Blog | null> {
+    const { data, error } = await this.supabase
+      .from(this.blogsTableName)
+      .select('*')
+      .eq('slug', slug)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(`Failed to fetch blog by slug: ${error.message}`);
     }
 
     return data ? this.mapToBlog(data) : null;

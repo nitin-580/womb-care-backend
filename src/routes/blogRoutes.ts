@@ -15,5 +15,6 @@ const blogController = new BlogController(blogService);
 // Public routes for viewers
 router.get('/', blogController.getBlogs);
 router.get('/:id', blogController.getBlog);
+router.get('/slug/:slug', blogController.getBlogBySlug);
 
 export default router;

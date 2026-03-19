@@ -1,5 +1,6 @@
 import { BlogRepository } from '../repositories/blogRepository';
 import { CreateBlogInput, UpdateBlogInput, Blog, PaginatedResult } from '../database/interfaces';
+import { slugify } from '../utils/slugify';
 
 export class BlogService {
   constructor(private blogRepository: BlogRepository) {}
@@ -9,9 +10,26 @@ export class BlogService {
       throw new Error('Title, content, and author name are required');
     }
     
+    // Generate unique slug
+    let slug = slugify(blog.title);
+    let isUnique = false;
+    let finalSlug = slug;
+    let counter = 1;
+
+    while (!isUnique) {
+      const existing = await this.blogRepository.getBySlug(finalSlug);
+      if (!existing) {
+        isUnique = true;
+      } else {
+        finalSlug = `${slug}-${counter}`;
+        counter++;
+      }
+    }
+    
     // Default to HTML if not specified
     const blogData = {
       ...blog,
+      slug: finalSlug,
       contentType: blog.contentType || 'html',
       published: blog.published !== undefined ? blog.published : true
     };
@@ -21,6 +39,14 @@ export class BlogService {
 
   async getBlogById(id: string): Promise<Blog> {
     const blog = await this.blogRepository.getById(id);
+    if (!blog) {
+      throw new Error('Blog not found');
+    }
+    return blog;
+  }
+
+  async getBlogBySlug(slug: string): Promise<Blog> {
+    const blog = await this.blogRepository.getBySlug(slug);
     if (!blog) {
       throw new Error('Blog not found');
     }

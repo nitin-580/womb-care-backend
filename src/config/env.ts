@@ -21,9 +21,13 @@ const envSchema = z.object({
   // Admin Security
   ADMIN_API_KEY: z.string().min(16),
   
+  // JWT Security
+  JWT_SECRET: z.string().min(1),
+  
   // CORS
   CORS_ORIGIN: z.string().default('*'),
 });
+
 
 const _env = envSchema.safeParse(process.env);
 

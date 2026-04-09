@@ -62,6 +62,74 @@ export interface PaginatedResult<T> {
   page: number;
   limit: number;
 }
+// Doctor Interface
+export interface Doctor {
+  id: string;
+  name: string;
+  email: string;
+  password?: string;
+  phone: string;
+  specialization: string;
+  credentials: string;
+  referralCode: string;
+  profilePicture?: string;
+  totalPatients?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateDoctorInput = Omit<
+  Doctor,
+  "id" | "createdAt" | "updatedAt" | "totalPatients"
+>;
+
+export type UpdateDoctorInput = Partial<CreateDoctorInput>;
+
+export interface DoctorLoginInput {
+  email: string;
+  password: string;
+}
+
+export interface DoctorAuthResponse {
+  token: string;
+  doctor: Omit<Doctor, "password">;
+}
+
+// Patient Interface
+export interface Patient {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  age: number;
+  weight: number;
+  cycleRegularity: string;
+  symptoms: string;
+  country: string;
+  referredBy: string; // Doctor ID
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreatePatientInput = Omit<Patient, 'id' | 'createdAt' | 'updatedAt'>;
+export type UpdatePatientInput = Partial<CreatePatientInput>;
+
+// Enrollment Interface
+export interface Enrollment {
+  id: string;
+  fullName: string;
+  age: number;
+  phone: string;
+  city: string;
+  symptoms?: string;
+  duration?: string;
+  plan: string;
+  consultationTime?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export type CreateEnrollmentInput = Omit<Enrollment, 'id' | 'createdAt'>;
 
 // Database Adapter Interface
 export interface DatabaseAdapter {
@@ -84,4 +152,25 @@ export interface DatabaseAdapter {
   getPaginatedCareers(page: number, limit: number): Promise<PaginatedResult<Career>>;
   updateCareer(id: string, career: UpdateCareerInput): Promise<Career>;
   deleteCareer(id: string): Promise<void>;
+
+  // Doctor operations
+  createDoctor(doctor: CreateDoctorInput): Promise<Doctor>;
+  getDoctorById(id: string): Promise<Doctor | null>;
+  getDoctorByEmail(email: string): Promise<Doctor | null>;
+  getDoctorByReferralCode(code: string): Promise<Doctor | null>;
+  getPaginatedDoctors(page: number, limit: number): Promise<PaginatedResult<Doctor>>;
+  updateDoctor(id: string, doctor: UpdateDoctorInput): Promise<Doctor>;
+  deleteDoctor(id: string): Promise<void>;
+
+  // Patient operations (referred by doctor)
+  createPatient(patient: CreatePatientInput): Promise<Patient>;
+  getPatientById(id: string): Promise<Patient | null>;
+  getPatientsByDoctor(doctorId: string): Promise<Patient[]>;
+  getPaginatedPatientsByDoctor(doctorId: string, page: number, limit: number): Promise<PaginatedResult<Patient>>;
+
+  // Enrollment operations
+  createEnrollment(enrollment: CreateEnrollmentInput): Promise<Enrollment>;
+  getPaginatedEnrollments(page: number, limit: number): Promise<PaginatedResult<Enrollment>>;
+  getEnrollmentStats(): Promise<{ total: number }>;
 }
+

@@ -1,0 +1,35 @@
+import { 
+  DatabaseAdapter, 
+  Doctor, 
+  CreateDoctorInput, 
+  UpdateDoctorInput, 
+  PaginatedResult 
+} from '../database/interfaces';
+
+export class DoctorRepository {
+  constructor(private dbAdapter: DatabaseAdapter) {}
+
+  async create(doctor: CreateDoctorInput): Promise<Doctor> {
+    return this.dbAdapter.createDoctor(doctor);
+  }
+
+  async findById(id: string): Promise<Doctor | null> {
+    return this.dbAdapter.getDoctorById(id);
+  }
+
+  async findByEmail(email: string): Promise<Doctor | null> {
+    return this.dbAdapter.getDoctorByEmail(email);
+  }
+
+  async findByReferralCode(code: string): Promise<Doctor | null> {
+    return this.dbAdapter.getDoctorByReferralCode(code);
+  }
+
+  async update(id: string, doctor: UpdateDoctorInput): Promise<Doctor> {
+    return this.dbAdapter.updateDoctor(id, doctor);
+  }
+
+  async getPaginated(page: number, limit: number): Promise<PaginatedResult<Doctor>> {
+    return this.dbAdapter.getPaginatedDoctors(page, limit);
+  }
+}

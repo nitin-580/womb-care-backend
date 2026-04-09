@@ -12,6 +12,9 @@ import { CareerService } from '../services/careerService';
 import { CareerRepository } from '../repositories/careerRepository';
 import { UploadController } from '../controllers/uploadController';
 import { StorageService } from '../services/storageService';
+import { EnrollmentController } from '../controllers/enrollmentController';
+import { EnrollmentService } from '../services/enrollmentService';
+import { EnrollmentRepository } from '../repositories/enrollmentRepository';
 import multer from 'multer';
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -21,7 +24,9 @@ const router = Router();
 // Dependency Injection Setup
 const dbAdapter = new SupabaseAdapter();
 const userRepository = new UserRepository(dbAdapter);
-const adminService = new AdminService(userRepository);
+const enrollmentRepository = new EnrollmentRepository(dbAdapter);
+
+const adminService = new AdminService(userRepository, enrollmentRepository);
 const adminController = new AdminController(adminService);
 
 const blogRepository = new BlogRepository(dbAdapter);
@@ -34,6 +39,9 @@ const careerController = new CareerController(careerService);
 
 const storageService = new StorageService();
 const uploadController = new UploadController(storageService);
+
+const enrollmentService = new EnrollmentService(enrollmentRepository);
+const enrollmentController = new EnrollmentController(enrollmentService);
 
 // Apply admin authentication middleware to all admin routes
 router.use(adminAuth);
@@ -58,5 +66,8 @@ router.get('/careers/:id', careerController.getCareer);
 router.post('/careers', careerController.createCareer);
 router.patch('/careers/:id', careerController.updateCareer);
 router.delete('/careers/:id', careerController.deleteCareer);
+
+// Admin Enrollment management
+router.get('/enrollments', enrollmentController.getAll);
 
 export default router;

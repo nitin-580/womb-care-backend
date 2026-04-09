@@ -1,11 +1,33 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { DatabaseAdapter, User, CreateUserInput, RegistrationStats, PaginatedResult, Blog, CreateBlogInput, UpdateBlogInput, Career, CreateCareerInput, UpdateCareerInput } from './interfaces';
+import { 
+  DatabaseAdapter, 
+  User, 
+  CreateUserInput, 
+  RegistrationStats, 
+  PaginatedResult, 
+  Blog, 
+  CreateBlogInput, 
+  UpdateBlogInput, 
+  Career, 
+  CreateCareerInput, 
+  UpdateCareerInput,
+  Doctor,
+  CreateDoctorInput,
+  UpdateDoctorInput,
+  Patient,
+  CreatePatientInput,
+  UpdatePatientInput,
+  Enrollment,
+  CreateEnrollmentInput
+} from './interfaces';
+
 import { env } from '../config/env';
 
 export class SupabaseAdapter implements DatabaseAdapter {
   private supabase: SupabaseClient;
   private readonly tableName = 'early_access_users';
   private readonly blogsTableName = 'blogs';
+  private readonly enrollmentsTableName = 'wombcare_enrollment_forms';
 
   constructor() {
     this.supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
@@ -346,4 +368,316 @@ export class SupabaseAdapter implements DatabaseAdapter {
       throw new Error(`Failed to delete career: ${error.message}`);
     }
   }
+  private mapToDoctor(row: any): Doctor {
+    return {
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      password: row.password,
+      phone: row.phone,
+      specialization: row.specialization,
+      credentials: row.credentials,
+      referralCode: row.referral_code,
+      profilePicture: row.profile_picture,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  }
+
+  private mapToDoctorDbRow(doctor: CreateDoctorInput | UpdateDoctorInput) {
+    const row: any = {};
+    if (doctor.name) row.name = doctor.name;
+    if (doctor.email) row.email = doctor.email;
+    if (doctor.password) row.password = doctor.password;
+    if (doctor.phone) row.phone = doctor.phone;
+    if (doctor.specialization) row.specialization = doctor.specialization;
+    if (doctor.credentials) row.credentials = doctor.credentials;
+    if (doctor.referralCode) row.referral_code = doctor.referralCode;
+    if (doctor.profilePicture !== undefined) row.profile_picture = doctor.profilePicture;
+    return row;
+  }
+
+  async createDoctor(doctor: CreateDoctorInput): Promise<Doctor> {
+    const { data, error } = await this.supabase
+      .from("doctors")
+      .insert(this.mapToDoctorDbRow(doctor))
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to create doctor: ${error.message}`);
+    }
+
+    return this.mapToDoctor(data);
+  }
+
+  async getDoctorById(id: string): Promise<Doctor | null> {
+    const { data, error } = await this.supabase
+      .from("doctors")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(`Failed to fetch doctor: ${error.message}`);
+    }
+
+    return data ? this.mapToDoctor(data) : null;
+  }
+
+  async getDoctorByEmail(email: string): Promise<Doctor | null> {
+    const { data, error } = await this.supabase
+      .from("doctors")
+      .select("*")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(`Failed to fetch doctor by email: ${error.message}`);
+    }
+
+    return data ? this.mapToDoctor(data) : null;
+  }
+
+  async getDoctorByReferralCode(code: string): Promise<Doctor | null> {
+    const { data, error } = await this.supabase
+      .from("doctors")
+      .select("*")
+      .eq("referral_code", code)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(`Failed to fetch doctor by referral code: ${error.message}`);
+    }
+
+    return data ? this.mapToDoctor(data) : null;
+  }
+
+  async getPaginatedDoctors(page: number, limit: number): Promise<PaginatedResult<Doctor>> {
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    const { data, error, count } = await this.supabase
+      .from('doctors')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (error) {
+      throw new Error(`Failed to fetch paginated doctors: ${error.message}`);
+    }
+
+    return {
+      data: data.map(this.mapToDoctor),
+      total: count || 0,
+      page,
+      limit,
+    };
+  }
+
+  async updateDoctor(id: string, doctor: UpdateDoctorInput): Promise<Doctor> {
+    const { data, error } = await this.supabase
+      .from('doctors')
+      .update(this.mapToDoctorDbRow(doctor))
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to update doctor: ${error.message}`);
+    }
+
+    return this.mapToDoctor(data);
+  }
+
+  async deleteDoctor(id: string): Promise<void> {
+    const { error } = await this.supabase
+      .from('doctors')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(`Failed to delete doctor: ${error.message}`);
+    }
+  }
+
+  // Patient operations mapping
+  private mapToPatient(row: any): Patient {
+    return {
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      phone: row.phone,
+      age: row.age,
+      weight: row.weight,
+      cycleRegularity: row.cycle_regular,
+      symptoms: row.symptoms,
+      country: row.country,
+      referredBy: row.referred_by,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  }
+
+  private mapToPatientDbRow(patient: CreatePatientInput | UpdatePatientInput) {
+    const row: any = {};
+    if (patient.name) row.name = patient.name;
+    if (patient.email) row.email = patient.email;
+    if (patient.phone) row.phone = patient.phone;
+    if (patient.age) row.age = patient.age;
+    if (patient.weight) row.weight = patient.weight;
+    if (patient.cycleRegularity) row.cycle_regular = patient.cycleRegularity;
+    if (patient.symptoms) row.symptoms = patient.symptoms;
+    if (patient.country) row.country = patient.country;
+    if (patient.referredBy) row.referred_by = patient.referredBy;
+    return row;
+  }
+
+  async createPatient(patient: CreatePatientInput): Promise<Patient> {
+    const { data, error } = await this.supabase
+      .from("patients")
+      .insert(this.mapToPatientDbRow(patient))
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to create patient: ${error.message}`);
+    }
+
+    return this.mapToPatient(data);
+  }
+
+  async getPatientById(id: string): Promise<Patient | null> {
+    const { data, error } = await this.supabase
+      .from("patients")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(`Failed to fetch patient: ${error.message}`);
+    }
+
+    return data ? this.mapToPatient(data) : null;
+  }
+
+  async getPatientsByDoctor(doctorId: string): Promise<Patient[]> {
+    const { data, error } = await this.supabase
+      .from("patients")
+      .select("*")
+      .eq("referred_by", doctorId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to fetch patients for doctor: ${error.message}`);
+    }
+
+    return data.map(this.mapToPatient);
+  }
+
+  async getPaginatedPatientsByDoctor(doctorId: string, page: number, limit: number): Promise<PaginatedResult<Patient>> {
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    const { data, error, count } = await this.supabase
+      .from('patients')
+      .select('*', { count: 'exact' })
+      .eq("referred_by", doctorId)
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (error) {
+      throw new Error(`Failed to fetch paginated patients for doctor: ${error.message}`);
+    }
+
+    return {
+      data: data.map(this.mapToPatient),
+      total: count || 0,
+      page,
+      limit,
+    };
+  }
+
+  // Enrollment operations
+  private mapToEnrollment(row: any): Enrollment {
+    return {
+      id: row.id,
+      fullName: row.full_name,
+      age: row.age,
+      phone: row.phone,
+      city: row.city,
+      symptoms: row.symptoms,
+      duration: row.condition_duration,
+      plan: row.preferred_plan,
+      consultationTime: row.preferred_consultation_time,
+      notes: row.additional_notes,
+      createdAt: row.created_at,
+    };
+  }
+
+  private mapToEnrollmentDbRow(enrollment: CreateEnrollmentInput) {
+    return {
+      full_name: enrollment.fullName,
+      age: enrollment.age,
+      phone: enrollment.phone,
+      city: enrollment.city,
+      symptoms: enrollment.symptoms,
+      condition_duration: enrollment.duration,
+      preferred_plan: enrollment.plan,
+      preferred_consultation_time: enrollment.consultationTime,
+      additional_notes: enrollment.notes,
+    };
+  }
+
+  async createEnrollment(enrollment: CreateEnrollmentInput): Promise<Enrollment> {
+    const { data, error } = await this.supabase
+      .from(this.enrollmentsTableName)
+      .insert(this.mapToEnrollmentDbRow(enrollment))
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to create enrollment: ${error.message}`);
+    }
+
+    return this.mapToEnrollment(data);
+  }
+
+  async getPaginatedEnrollments(page: number, limit: number): Promise<PaginatedResult<Enrollment>> {
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    console.log(`[DEBUG] Fetching enrollments from table: ${this.enrollmentsTableName}`);
+    const { data, error, count } = await this.supabase
+      .from(this.enrollmentsTableName)
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (error) {
+      console.error('[DEBUG] Supabase error:', error);
+      throw new Error(`Failed to fetch paginated enrollments: ${error.message}`);
+    }
+    console.log(`[DEBUG] Found ${data?.length || 0} enrollments`);
+
+    return {
+      data: data.map(this.mapToEnrollment),
+      total: count || 0,
+      page,
+      limit,
+    };
+  }
+
+  async getEnrollmentStats(): Promise<{ total: number }> {
+    const { count, error } = await this.supabase
+      .from(this.enrollmentsTableName)
+      .select('*', { count: 'exact', head: true });
+
+    if (error) {
+      throw new Error(`Failed to fetch enrollment stats: ${error.message}`);
+    }
+
+    return { total: count || 0 };
+  }
 }
+

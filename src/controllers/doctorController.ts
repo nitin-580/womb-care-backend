@@ -260,4 +260,22 @@ export class DoctorController {
       });
     }
   };
+
+  /**
+   * Role Check
+   * GET /api/doctors/role-check?email=...
+   */
+  roleCheck = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const email = req.query.email as string;
+      if (!email) {
+        res.status(400).json({ success: false, message: "Email required" });
+        return;
+      }
+      const role = await this.doctorRepo.getUserRole(email);
+      res.status(200).json({ success: true, role: role || 'user' });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  };
 }

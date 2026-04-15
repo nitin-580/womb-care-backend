@@ -16,6 +16,7 @@ const doctorController = new DoctorController(doctorRepo, patientRepo);
 // Public Routes
 router.post('/signup', doctorController.signupDoctor);
 router.post('/login', doctorController.loginDoctor);
+router.get('/role-check', doctorController.roleCheck);
 
 // Private Routes
 router.get('/profile', doctorAuth, doctorController.getDoctorProfile);

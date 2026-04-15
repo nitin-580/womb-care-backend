@@ -29,7 +29,7 @@ export class AppointmentController {
 
   getByUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const appointments = await this.appointmentService.getUserAppointments(req.params.userId);
+      const appointments = await this.appointmentService.getUserAppointments(req.params.userId as string);
       res.status(200).json({
         success: true,
         data: appointments
@@ -41,7 +41,7 @@ export class AppointmentController {
 
   cancel = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await this.appointmentService.cancelAppointment(req.params.id);
+      await this.appointmentService.cancelAppointment(req.params.id as string);
       res.status(200).json({
         success: true,
         message: 'Appointment cancelled successfully'

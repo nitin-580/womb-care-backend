@@ -36,6 +36,7 @@ export class SupabaseAdapter implements DatabaseAdapter {
   private readonly enrollmentsTableName = 'wombcare_enrollment_forms';
   private readonly userProfilesTableName = 'wombcare_user_profiles';
   private readonly appointmentsTableName = 'wombcare_appointments';
+  private readonly userRolesTableName = 'user_roles';
 
   constructor() {
     this.supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
@@ -888,6 +889,21 @@ export class SupabaseAdapter implements DatabaseAdapter {
       createdAt: row.created_at,
       updatedAt: row.updated_at
     };
+  }
+
+  async getUserRole(email: string): Promise<string | null> {
+    const { data, error } = await this.supabase
+      .from(this.userRolesTableName)
+      .select('role')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching user role:', error);
+      return null;
+    }
+
+    return data ? data.role : null;
   }
 }
 

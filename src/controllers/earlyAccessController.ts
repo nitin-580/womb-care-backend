@@ -21,11 +21,12 @@ export class EarlyAccessController {
 
   register = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await this.earlyAccessService.registerUser(req.body);
+      const user = await this.earlyAccessService.registerUser(req.body);
       
       res.status(201).json({
         success: true,
-        message: 'You are on the early access list'
+        message: 'You are on the early access list',
+        data: user
       });
     } catch (error) {
       next(error);

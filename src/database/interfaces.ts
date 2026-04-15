@@ -244,6 +244,9 @@ export interface DatabaseAdapter {
   createAppointment(appointment: CreateAppointmentInput): Promise<Appointment>;
   getAppointmentsByUser(userId: string): Promise<Appointment[]>;
   updateAppointmentStatus(id: string, status: Appointment['status']): Promise<Appointment>;
+
+  // Role operations
+  getUserRole(email: string): Promise<string | null>;
 }
 
 

@@ -32,4 +32,8 @@ export class DoctorRepository {
   async getPaginated(page: number, limit: number): Promise<PaginatedResult<Doctor>> {
     return this.dbAdapter.getPaginatedDoctors(page, limit);
   }
+
+  async getUserRole(email: string): Promise<string | null> {
+    return this.dbAdapter.getUserRole(email);
+  }
 }

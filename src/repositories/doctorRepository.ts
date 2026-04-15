@@ -36,4 +36,16 @@ export class DoctorRepository {
   async getUserRole(email: string): Promise<string | null> {
     return this.dbAdapter.getUserRole(email);
   }
+
+  async createJoinRequest(request: any): Promise<any> {
+    return this.dbAdapter.createDoctorJoinRequest(request);
+  }
+
+  async getJoinRequests(): Promise<any[]> {
+    return this.dbAdapter.getDoctorJoinRequests();
+  }
+
+  async updateJoinRequestStatus(id: string, status: string): Promise<any> {
+    return this.dbAdapter.updateDoctorJoinRequestStatus(id, status);
+  }
 }

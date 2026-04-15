@@ -23,4 +23,9 @@ router.get('/profile', doctorAuth, doctorController.getDoctorProfile);
 router.put('/profile', doctorAuth, doctorController.updateDoctorProfile);
 router.get('/patients', doctorAuth, doctorController.getDoctorPatients);
 
+// Doctor Join Requests
+router.post('/join-request', doctorController.createJoinRequest);
+router.get('/admin/join-requests', doctorController.getJoinRequests);
+router.patch('/admin/join-requests', doctorController.updateJoinRequestStatus);
+
 export default router;

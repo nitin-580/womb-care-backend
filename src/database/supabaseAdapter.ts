@@ -37,6 +37,7 @@ export class SupabaseAdapter implements DatabaseAdapter {
   private readonly userProfilesTableName = 'wombcare_user_profiles';
   private readonly appointmentsTableName = 'wombcare_appointments';
   private readonly userRolesTableName = 'user_roles';
+  private readonly doctorJoinRequestsTableName = 'doctor_join_requests';
 
   constructor() {
     this.supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
@@ -904,6 +905,47 @@ export class SupabaseAdapter implements DatabaseAdapter {
     }
 
     return data ? data.role : null;
+  }
+
+  async createDoctorJoinRequest(request: any): Promise<any> {
+    const { data, error } = await this.supabase
+      .from(this.doctorJoinRequestsTableName)
+      .insert([request])
+      .select()
+      .single();
+
+    if (error) throw new Error(`Failed to create doctor join request: ${error.message}`);
+    return data;
+  }
+
+  async getDoctorJoinRequests(): Promise<any[]> {
+    const { data, error } = await this.supabase
+      .from(this.doctorJoinRequestsTableName)
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw new Error(`Failed to fetch doctor join requests: ${error.message}`);
+    return data || [];
+  }
+
+  async updateDoctorJoinRequestStatus(id: string, status: string): Promise<any> {
+    const { data, error } = await this.supabase
+      .from(this.doctorJoinRequestsTableName)
+      .update({ status })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw new Error(`Failed to update doctor join request status: ${error.message}`);
+
+    // If approved, sync to user_roles
+    if (status === 'approved' && data) {
+      await this.supabase
+        .from(this.userRolesTableName)
+        .upsert([{ email: data.email, role: 'doctor' }], { onConflict: 'email' });
+    }
+
+    return data;
   }
 }
 

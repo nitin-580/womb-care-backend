@@ -247,6 +247,11 @@ export interface DatabaseAdapter {
 
   // Role operations
   getUserRole(email: string): Promise<string | null>;
+
+  // Doctor Join Request operations
+  createDoctorJoinRequest(request: any): Promise<any>;
+  getDoctorJoinRequests(): Promise<any[]>;
+  updateDoctorJoinRequestStatus(id: string, status: string): Promise<any>;
 }
 
 

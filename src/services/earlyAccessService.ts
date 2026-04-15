@@ -1,6 +1,6 @@
 import { UserRepository } from '../repositories/userRepository';
 import { CreateUserInput } from '../database/interfaces';
-import { sendConfirmationEmail } from '../workers/emailWorker';
+import { sendWelcomeMail } from '../lib/sendWelcomeMail';
 import { logger } from '../utils/logger';
 
 export class EarlyAccessService {
@@ -18,9 +18,9 @@ export class EarlyAccessService {
     // 2. Persist user to database
     const user = await this.userRepository.create(userData);
 
-    // 3. Trigger confirmation email asynchronously (do not await)
-    sendConfirmationEmail(user.name, user.email).catch((err) => {
-      logger.error(`Failed to send background email to ${user.email}:`, err);
+    // 3. Trigger welcome email using Resend utility
+    sendWelcomeMail(user.email, user.name).catch((err) => {
+      logger.error(`Failed to send welcome email to ${user.email}:`, err);
     });
 
     return user;

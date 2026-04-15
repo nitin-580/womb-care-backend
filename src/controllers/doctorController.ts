@@ -5,6 +5,7 @@ import { DoctorRepository } from "../repositories/doctorRepository";
 import { PatientRepository } from "../repositories/patientRepository";
 import { env } from "../config/env";
 import { CreateDoctorInput, UpdateDoctorInput } from "../database/interfaces";
+import { sendWelcomeMail } from "../lib/sendWelcomeMail";
 
 export class DoctorController {
   constructor(
@@ -55,6 +56,11 @@ export class DoctorController {
       };
 
       const doctor = await this.doctorRepo.create(doctorData);
+
+      // Trigger welcome email asynchronously
+      sendWelcomeMail(doctor.email, doctor.name).catch((err) => {
+        console.error(`Failed to send welcome email to doctor ${doctor.email}:`, err);
+      });
 
       // Remove password from response
       const { password: _, ...doctorResponse } = doctor as any;

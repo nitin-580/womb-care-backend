@@ -20,6 +20,13 @@ export const userProfileSchema = z.object({
     doctorNote: z.string().optional(),
     id: z.string().optional(),
     profileCompleted: z.boolean().optional(),
+    cycleStartDate: z.string().optional(),
+    weight: z.number().optional(),
+    mood: z.string().optional(),
+    moodDate: z.string().optional(),
+    waterIntakeDate: z.string().optional(),
+    isPeriodTrackerEnabled: z.boolean().optional(),
+    wellnessGoal: z.string().optional(),
   }),
 });
 
@@ -46,6 +53,13 @@ export const updateProfileSchema = z.object({
     personalNotes: z.string().optional(),
     doctorNote: z.string().optional(),
     profileCompleted: z.boolean().optional(),
+    cycleStartDate: z.string().optional(),
+    weight: z.number().optional(),
+    mood: z.string().optional(),
+    moodDate: z.string().optional(),
+    waterIntakeDate: z.string().optional(),
+    isPeriodTrackerEnabled: z.boolean().optional(),
+    wellnessGoal: z.string().optional(),
   }),
 });
 

@@ -18,7 +18,9 @@ import {
   CreatePatientInput,
   UpdatePatientInput,
   Enrollment,
-  CreateEnrollmentInput
+  CreateEnrollmentInput,
+  UserProfile,
+  CreateUserProfileInput
 } from './interfaces';
 
 import { env } from '../config/env';
@@ -27,7 +29,10 @@ export class SupabaseAdapter implements DatabaseAdapter {
   private supabase: SupabaseClient;
   private readonly tableName = 'early_access_users';
   private readonly blogsTableName = 'blogs';
+  private readonly doctorsTableName = 'users';
+  private readonly patientsTableName = 'wombcare_patients';
   private readonly enrollmentsTableName = 'wombcare_enrollment_forms';
+  private readonly userProfilesTableName = 'wombcare_user_profiles';
 
   constructor() {
     this.supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
@@ -399,7 +404,7 @@ export class SupabaseAdapter implements DatabaseAdapter {
 
   async createDoctor(doctor: CreateDoctorInput): Promise<Doctor> {
     const { data, error } = await this.supabase
-      .from("doctors")
+      .from(this.doctorsTableName)
       .insert(this.mapToDoctorDbRow(doctor))
       .select()
       .single();
@@ -413,7 +418,7 @@ export class SupabaseAdapter implements DatabaseAdapter {
 
   async getDoctorById(id: string): Promise<Doctor | null> {
     const { data, error } = await this.supabase
-      .from("doctors")
+      .from(this.doctorsTableName)
       .select("*")
       .eq("id", id)
       .maybeSingle();
@@ -427,7 +432,7 @@ export class SupabaseAdapter implements DatabaseAdapter {
 
   async getDoctorByEmail(email: string): Promise<Doctor | null> {
     const { data, error } = await this.supabase
-      .from("doctors")
+      .from(this.doctorsTableName)
       .select("*")
       .eq("email", email)
       .maybeSingle();
@@ -441,7 +446,7 @@ export class SupabaseAdapter implements DatabaseAdapter {
 
   async getDoctorByReferralCode(code: string): Promise<Doctor | null> {
     const { data, error } = await this.supabase
-      .from("doctors")
+      .from(this.doctorsTableName)
       .select("*")
       .eq("referral_code", code)
       .maybeSingle();
@@ -458,7 +463,7 @@ export class SupabaseAdapter implements DatabaseAdapter {
     const to = from + limit - 1;
 
     const { data, error, count } = await this.supabase
-      .from('doctors')
+      .from(this.doctorsTableName)
       .select('*', { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(from, to);
@@ -477,7 +482,7 @@ export class SupabaseAdapter implements DatabaseAdapter {
 
   async updateDoctor(id: string, doctor: UpdateDoctorInput): Promise<Doctor> {
     const { data, error } = await this.supabase
-      .from('doctors')
+      .from(this.doctorsTableName)
       .update(this.mapToDoctorDbRow(doctor))
       .eq('id', id)
       .select()
@@ -492,7 +497,7 @@ export class SupabaseAdapter implements DatabaseAdapter {
 
   async deleteDoctor(id: string): Promise<void> {
     const { error } = await this.supabase
-      .from('doctors')
+      .from(this.doctorsTableName)
       .delete()
       .eq('id', id);
 
@@ -678,6 +683,124 @@ export class SupabaseAdapter implements DatabaseAdapter {
     }
 
     return { total: count || 0 };
+  }
+
+  // User Profile methods
+  async createUserProfile(profile: CreateUserProfileInput): Promise<UserProfile> {
+    const { data, error } = await this.supabase
+      .from(this.userProfilesTableName)
+      .insert({
+        name: profile.name,
+        email: profile.email,
+        age: profile.age,
+        active_plan: profile.activePlan,
+        plan_status: profile.planStatus,
+        water_intake: profile.waterIntake,
+        target_water: profile.targetWater,
+        calories_target: profile.caloriesTarget,
+        protein_target: profile.proteinTarget,
+        symptoms: profile.symptoms,
+        bmi: profile.bmi,
+        wellness_score: profile.wellnessScore,
+        personal_notes: profile.personalNotes,
+        doctor_note: profile.doctorNote,
+        id: profile.id,
+        profile_completed: profile.profileCompleted ?? true,
+        cycle_start_date: profile.cycleStartDate
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to create user profile: ${error.message}`);
+    }
+
+    return this.mapToUserProfile(data);
+  }
+
+  async getUserProfile(id: string): Promise<UserProfile> {
+    const { data, error } = await this.supabase
+      .from(this.userProfilesTableName)
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to fetch user profile: ${error.message}`);
+    }
+
+    return this.mapToUserProfile(data);
+  }
+
+  async updateUserProfile(id: string, updates: Partial<UserProfile>): Promise<UserProfile> {
+    const dbUpdates: any = {};
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.email !== undefined) dbUpdates.email = updates.email;
+    if (updates.age !== undefined) dbUpdates.age = updates.age;
+    if (updates.isActive !== undefined) dbUpdates.is_active = updates.isActive;
+    if (updates.lastSeen !== undefined) dbUpdates.last_seen = updates.lastSeen;
+    if (updates.activePlan !== undefined) dbUpdates.active_plan = updates.activePlan;
+    if (updates.planStatus !== undefined) dbUpdates.plan_status = updates.planStatus;
+    if (updates.nextAppointment !== undefined) dbUpdates.next_appointment = updates.nextAppointment;
+    if (updates.cycleDay !== undefined) dbUpdates.cycle_day = updates.cycleDay;
+    if (updates.cycleLength !== undefined) dbUpdates.cycle_length = updates.cycleLength;
+    if (updates.nextPeriodDate !== undefined) dbUpdates.next_period_date = updates.nextPeriodDate;
+    if (updates.waterIntake !== undefined) dbUpdates.water_intake = updates.waterIntake;
+    if (updates.targetWater !== undefined) dbUpdates.target_water = updates.targetWater;
+    if (updates.caloriesTarget !== undefined) dbUpdates.calories_target = updates.caloriesTarget;
+    if (updates.proteinTarget !== undefined) dbUpdates.protein_target = updates.proteinTarget;
+    if (updates.symptoms !== undefined) dbUpdates.symptoms = updates.symptoms;
+    if (updates.bmi !== undefined) dbUpdates.bmi = updates.bmi;
+    if (updates.wellnessScore !== undefined) dbUpdates.wellness_score = updates.wellnessScore;
+    if (updates.personalNotes !== undefined) dbUpdates.personal_notes = updates.personalNotes;
+    if (updates.doctorNote !== undefined) dbUpdates.doctor_note = updates.doctorNote;
+    if (updates.profileCompleted !== undefined) dbUpdates.profile_completed = updates.profileCompleted;
+    if (updates.cycleStartDate !== undefined) dbUpdates.cycle_start_date = updates.cycleStartDate;
+    
+    dbUpdates.updated_at = new Date().toISOString();
+
+    const { data, error } = await this.supabase
+      .from(this.userProfilesTableName)
+      .update(dbUpdates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to update user profile: ${error.message}`);
+    }
+
+    return this.mapToUserProfile(data);
+  }
+
+  private mapToUserProfile(row: any): UserProfile {
+    return {
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      age: row.age,
+      isActive: row.is_active,
+      lastSeen: row.last_seen,
+      activePlan: row.active_plan,
+      planStatus: row.plan_status,
+      nextAppointment: row.next_appointment,
+      cycleDay: row.cycle_day,
+      cycleLength: row.cycle_length,
+      nextPeriodDate: row.next_period_date,
+      waterIntake: row.water_intake,
+      targetWater: row.target_water,
+      caloriesTarget: row.calories_target,
+      proteinTarget: row.protein_target,
+      symptoms: Array.isArray(row.symptoms) ? row.symptoms : [],
+      bmi: row.bmi,
+      wellnessScore: row.wellness_score,
+      personalNotes: row.personal_notes,
+      doctorNote: row.doctor_note,
+      profileCompleted: row.profile_completed,
+      cycleStartDate: row.cycle_start_date,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
   }
 }
 

@@ -62,6 +62,54 @@ export interface PaginatedResult<T> {
   page: number;
   limit: number;
 }
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  age?: number;
+  isActive: boolean;
+  lastSeen?: string;
+  activePlan?: string;
+  planStatus?: string;
+  nextAppointment?: string;
+  cycleDay?: number;
+  cycleLength?: number;
+  nextPeriodDate?: string;
+  waterIntake: number;
+  targetWater: number;
+  caloriesTarget: number;
+  proteinTarget: number;
+  symptoms: string[];
+  bmi?: number;
+  wellnessScore?: number;
+  personalNotes?: string;
+  doctorNote?: string;
+  profileCompleted: boolean;
+  cycleStartDate?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateUserProfileInput {
+  name: string;
+  email: string;
+  age?: number;
+  activePlan?: string;
+  planStatus?: string;
+  waterIntake?: number;
+  targetWater?: number;
+  caloriesTarget?: number;
+  proteinTarget?: number;
+  symptoms?: string[];
+  bmi?: number;
+  wellnessScore?: number;
+  personalNotes?: string;
+  doctorNote?: string;
+  id?: string;
+  profileCompleted?: boolean;
+  cycleStartDate?: string;
+}
 // Doctor Interface
 export interface Doctor {
   id: string;
@@ -172,5 +220,10 @@ export interface DatabaseAdapter {
   createEnrollment(enrollment: CreateEnrollmentInput): Promise<Enrollment>;
   getPaginatedEnrollments(page: number, limit: number): Promise<PaginatedResult<Enrollment>>;
   getEnrollmentStats(): Promise<{ total: number }>;
+  
+  // User Profile operations
+  createUserProfile(profile: CreateUserProfileInput): Promise<UserProfile>;
+  getUserProfile(id: string): Promise<UserProfile>;
+  updateUserProfile(id: string, updates: Partial<UserProfile>): Promise<UserProfile>;
 }
 

@@ -5,6 +5,7 @@ import blogRoutes from './blogRoutes';
 import careerRoutes from './careerRoutes';
 import doctorRoutes from './doctorRoutes';
 import enrollmentRoutes from './enrollmentRoutes';
+import userProfileRoutes from './userProfileRoutes';
 
 const router = Router();
 
@@ -14,6 +15,7 @@ router.use('/blogs', blogRoutes);
 router.use('/careers', careerRoutes);
 router.use('/doctors', doctorRoutes);
 router.use('/enrollments', enrollmentRoutes);
+router.use('/profiles', userProfileRoutes);
 
 
 // Health check endpoint

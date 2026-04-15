@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration
-API_URL="https://womb-care-backend-pjdlszuslq-uc.a.run.app" # Cloud Run LIVE URL
+API_URL="http://localhost:3001"
 DOCTOR_EMAIL="dr.test_$(date +%s)@example.com"
 DOCTOR_PASSWORD="Password123!"
 

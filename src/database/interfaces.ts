@@ -82,7 +82,13 @@ export interface UserProfile {
   proteinTarget: number;
   symptoms: string[];
   bmi?: number;
+  weight?: number;
+  mood?: string;
+  moodDate?: string;
+  waterIntakeDate?: string;
+  isPeriodTrackerEnabled: boolean;
   wellnessScore?: number;
+  wellnessGoal?: string;
   personalNotes?: string;
   doctorNote?: string;
   profileCompleted: boolean;
@@ -103,7 +109,13 @@ export interface CreateUserProfileInput {
   proteinTarget?: number;
   symptoms?: string[];
   bmi?: number;
+  weight?: number;
+  mood?: string;
+  moodDate?: string;
+  waterIntakeDate?: string;
+  isPeriodTrackerEnabled?: boolean;
   wellnessScore?: number;
+  wellnessGoal?: string;
   personalNotes?: string;
   doctorNote?: string;
   id?: string;

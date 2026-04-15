@@ -702,11 +702,17 @@ export class SupabaseAdapter implements DatabaseAdapter {
         symptoms: profile.symptoms,
         bmi: profile.bmi,
         wellness_score: profile.wellnessScore,
+        wellness_goal: profile.wellnessGoal,
         personal_notes: profile.personalNotes,
         doctor_note: profile.doctorNote,
         id: profile.id,
         profile_completed: profile.profileCompleted ?? true,
-        cycle_start_date: profile.cycleStartDate
+        cycle_start_date: profile.cycleStartDate,
+        weight: profile.weight,
+        mood: profile.mood,
+        mood_date: profile.moodDate,
+        water_intake_date: profile.waterIntakeDate,
+        is_period_tracker_enabled: profile.isPeriodTrackerEnabled ?? true
       })
       .select()
       .single();
@@ -754,8 +760,14 @@ export class SupabaseAdapter implements DatabaseAdapter {
     if (updates.wellnessScore !== undefined) dbUpdates.wellness_score = updates.wellnessScore;
     if (updates.personalNotes !== undefined) dbUpdates.personal_notes = updates.personalNotes;
     if (updates.doctorNote !== undefined) dbUpdates.doctor_note = updates.doctorNote;
+    if (updates.wellnessGoal !== undefined) dbUpdates.wellness_goal = updates.wellnessGoal;
     if (updates.profileCompleted !== undefined) dbUpdates.profile_completed = updates.profileCompleted;
     if (updates.cycleStartDate !== undefined) dbUpdates.cycle_start_date = updates.cycleStartDate;
+    if (updates.weight !== undefined) dbUpdates.weight = updates.weight;
+    if (updates.mood !== undefined) dbUpdates.mood = updates.mood;
+    if (updates.moodDate !== undefined) dbUpdates.mood_date = updates.moodDate;
+    if (updates.waterIntakeDate !== undefined) dbUpdates.water_intake_date = updates.waterIntakeDate;
+    if (updates.isPeriodTrackerEnabled !== undefined) dbUpdates.is_period_tracker_enabled = updates.isPeriodTrackerEnabled;
     
     dbUpdates.updated_at = new Date().toISOString();
 
@@ -794,10 +806,16 @@ export class SupabaseAdapter implements DatabaseAdapter {
       symptoms: Array.isArray(row.symptoms) ? row.symptoms : [],
       bmi: row.bmi,
       wellnessScore: row.wellness_score,
+      wellnessGoal: row.wellness_goal,
       personalNotes: row.personal_notes,
       doctorNote: row.doctor_note,
       profileCompleted: row.profile_completed,
       cycleStartDate: row.cycle_start_date,
+      weight: row.weight,
+      mood: row.mood,
+      moodDate: row.mood_date,
+      waterIntakeDate: row.water_intake_date,
+      isPeriodTrackerEnabled: row.is_period_tracker_enabled ?? true,
       createdAt: row.created_at,
       updatedAt: row.updated_at
     };

@@ -87,6 +87,7 @@ export interface UserProfile {
   moodDate?: string;
   waterIntakeDate?: string;
   isPeriodTrackerEnabled: boolean;
+  isPremium: boolean;
   wellnessScore?: number;
   wellnessGoal?: string;
   personalNotes?: string;
@@ -114,6 +115,7 @@ export interface CreateUserProfileInput {
   moodDate?: string;
   waterIntakeDate?: string;
   isPeriodTrackerEnabled?: boolean;
+  isPremium?: boolean;
   wellnessScore?: number;
   wellnessGoal?: string;
   personalNotes?: string;
@@ -237,5 +239,29 @@ export interface DatabaseAdapter {
   createUserProfile(profile: CreateUserProfileInput): Promise<UserProfile>;
   getUserProfile(id: string): Promise<UserProfile>;
   updateUserProfile(id: string, updates: Partial<UserProfile>): Promise<UserProfile>;
+
+  // Appointment operations
+  createAppointment(appointment: CreateAppointmentInput): Promise<Appointment>;
+  getAppointmentsByUser(userId: string): Promise<Appointment[]>;
+  updateAppointmentStatus(id: string, status: Appointment['status']): Promise<Appointment>;
 }
 
+
+export interface Appointment {
+  id: string;
+  userId: string;
+  doctorName: string;
+  appointmentDate: string; // ISO string
+  status: 'scheduled' | 'cancelled' | 'completed';
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateAppointmentInput {
+  userId: string;
+  doctorName: string;
+  appointmentDate: string;
+  status?: 'scheduled' | 'cancelled' | 'completed';
+  notes?: string;
+}

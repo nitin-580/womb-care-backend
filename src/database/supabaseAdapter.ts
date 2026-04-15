@@ -20,7 +20,9 @@ import {
   Enrollment,
   CreateEnrollmentInput,
   UserProfile,
-  CreateUserProfileInput
+  CreateUserProfileInput,
+  Appointment,
+  CreateAppointmentInput
 } from './interfaces';
 
 import { env } from '../config/env';
@@ -33,6 +35,7 @@ export class SupabaseAdapter implements DatabaseAdapter {
   private readonly patientsTableName = 'wombcare_patients';
   private readonly enrollmentsTableName = 'wombcare_enrollment_forms';
   private readonly userProfilesTableName = 'wombcare_user_profiles';
+  private readonly appointmentsTableName = 'wombcare_appointments';
 
   constructor() {
     this.supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
@@ -712,7 +715,8 @@ export class SupabaseAdapter implements DatabaseAdapter {
         mood: profile.mood,
         mood_date: profile.moodDate,
         water_intake_date: profile.waterIntakeDate,
-        is_period_tracker_enabled: profile.isPeriodTrackerEnabled ?? true
+        is_period_tracker_enabled: profile.isPeriodTrackerEnabled ?? true,
+        is_premium: profile.isPremium ?? false
       })
       .select()
       .single();
@@ -768,6 +772,7 @@ export class SupabaseAdapter implements DatabaseAdapter {
     if (updates.moodDate !== undefined) dbUpdates.mood_date = updates.moodDate;
     if (updates.waterIntakeDate !== undefined) dbUpdates.water_intake_date = updates.waterIntakeDate;
     if (updates.isPeriodTrackerEnabled !== undefined) dbUpdates.is_period_tracker_enabled = updates.isPeriodTrackerEnabled;
+    if (updates.isPremium !== undefined) dbUpdates.is_premium = updates.isPremium;
     
     dbUpdates.updated_at = new Date().toISOString();
 
@@ -816,6 +821,70 @@ export class SupabaseAdapter implements DatabaseAdapter {
       moodDate: row.mood_date,
       waterIntakeDate: row.water_intake_date,
       isPeriodTrackerEnabled: row.is_period_tracker_enabled ?? true,
+      isPremium: row.is_premium ?? false,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
+  }
+
+  // Appointment operations
+  async createAppointment(appointment: CreateAppointmentInput): Promise<Appointment> {
+    const { data, error } = await this.supabase
+      .from(this.appointmentsTableName)
+      .insert({
+        user_id: appointment.userId,
+        doctor_name: appointment.doctorName,
+        appointment_date: appointment.appointmentDate,
+        status: appointment.status || 'scheduled',
+        notes: appointment.notes
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to create appointment: ${error.message}`);
+    }
+
+    return this.mapToAppointment(data);
+  }
+
+  async getAppointmentsByUser(userId: string): Promise<Appointment[]> {
+    const { data, error } = await this.supabase
+      .from(this.appointmentsTableName)
+      .select('*')
+      .eq('user_id', userId)
+      .order('appointment_date', { ascending: true });
+
+    if (error) {
+      throw new Error(`Failed to fetch appointments: ${error.message}`);
+    }
+
+    return data.map((row: any) => this.mapToAppointment(row));
+  }
+
+  async updateAppointmentStatus(id: string, status: Appointment['status']): Promise<Appointment> {
+    const { data, error } = await this.supabase
+      .from(this.appointmentsTableName)
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to update appointment status: ${error.message}`);
+    }
+
+    return this.mapToAppointment(data);
+  }
+
+  private mapToAppointment(row: any): Appointment {
+    return {
+      id: row.id,
+      userId: row.user_id,
+      doctorName: row.doctor_name,
+      appointmentDate: row.appointment_date,
+      status: row.status,
+      notes: row.notes,
       createdAt: row.created_at,
       updatedAt: row.updated_at
     };

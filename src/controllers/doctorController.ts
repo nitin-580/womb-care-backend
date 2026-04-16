@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { DoctorRepository } from "../repositories/doctorRepository";
 import { PatientRepository } from "../repositories/patientRepository";
 import { env } from "../config/env";
+import { UserProfileRepository } from "../repositories/userProfileRepository";
 import { CreateDoctorInput, UpdateDoctorInput } from "../database/interfaces";
 import { sendWelcomeMail } from "../lib/sendWelcomeMail";
 import { sendDoctorApplicationMail, sendDoctorApprovalMail } from "../lib/sendDoctorMails";
@@ -11,7 +12,8 @@ import { sendDoctorApplicationMail, sendDoctorApprovalMail } from "../lib/sendDo
 export class DoctorController {
   constructor(
     private doctorRepo: DoctorRepository,
-    private patientRepo: PatientRepository
+    private patientRepo: PatientRepository,
+    private profileRepo: UserProfileRepository
   ) {}
 
   signupDoctor = async (req: Request, res: Response): Promise<void> => {
@@ -68,8 +70,21 @@ export class DoctorController {
       }
 
       const token = jwt.sign({ id: doctor.id, email: doctor.email, role: "doctor" }, env.JWT_SECRET, { expiresIn: "7d" });
+      
+      // Fetch role and onboarding status
+      const [role, profile] = await Promise.all([
+        this.doctorRepo.getUserRole(email),
+        this.profileRepo.getById(doctor.id).catch(() => null)
+      ]);
+
       const { password: _, ...doctorResponse } = doctor as any;
-      res.status(200).json({ success: true, token, doctor: doctorResponse });
+      res.status(200).json({ 
+        success: true, 
+        token, 
+        role: role || 'user',
+        onboardingCompleted: profile?.profileCompleted || false,
+        doctor: doctorResponse 
+      });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
     }
@@ -146,8 +161,20 @@ export class DoctorController {
 
   createJoinRequest = async (req: Request, res: Response): Promise<void> => {
     try {
+      const { email } = req.body;
+      
+      // Step 1: Check if email already exists in the users table
+      const existingUser = await this.doctorRepo.findByEmail(email);
+      if (existingUser) {
+        res.status(400).json({ 
+          success: false, 
+          message: "This email is already registered as a user. Please use a different professional email for your doctor application." 
+        });
+        return;
+      }
+
       const data = await this.doctorRepo.createJoinRequest(req.body);
-      sendDoctorApplicationMail(data.email, data.full_name, data.medical_registration_number).catch(console.error);
+      sendDoctorApplicationMail(data.email, data.fullName, data.medicalRegistrationNumber).catch(console.error);
       res.status(201).json({ success: true, data });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
@@ -167,9 +194,27 @@ export class DoctorController {
     try {
       const { id, status } = req.body;
       const data = await this.doctorRepo.updateJoinRequestStatus(id, status);
+      
       if (status === 'approved') {
-        sendDoctorApprovalMail(data.email, data.full_name).catch(console.error);
+        // Step 1: Generate temporary password
+        const tempPassword = `WC@${Math.floor(1000 + Math.random() * 9000)}`;
+        const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+        // Step 2: Create user account in the users/doctors table
+        await this.doctorRepo.create({
+          name: data.fullName,
+          email: data.email,
+          password: hashedPassword,
+          phone: data.phone,
+          specialization: data.specialization,
+          credentials: data.qualification,
+          referralCode: 'DOC' + Math.floor(100000 + Math.random() * 900000)
+        });
+
+        // Step 3: Send approval mail with temporary password
+        sendDoctorApprovalMail(data.email, data.fullName, tempPassword).catch(console.error);
       }
+      
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });

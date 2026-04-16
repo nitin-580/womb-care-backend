@@ -22,7 +22,9 @@ import {
   UserProfile,
   CreateUserProfileInput,
   Appointment,
-  CreateAppointmentInput
+  CreateAppointmentInput,
+  DoctorJoinRequest,
+  CreateDoctorJoinRequestInput
 } from './interfaces';
 
 import { env } from '../config/env';
@@ -907,28 +909,41 @@ export class SupabaseAdapter implements DatabaseAdapter {
     return data ? data.role : null;
   }
 
-  async createDoctorJoinRequest(request: any): Promise<any> {
+  async createDoctorJoinRequest(request: CreateDoctorJoinRequestInput): Promise<DoctorJoinRequest> {
     const { data, error } = await this.supabase
       .from(this.doctorJoinRequestsTableName)
-      .insert([request])
+      .insert([{
+        full_name: request.fullName,
+        email: request.email,
+        phone: request.phone,
+        specialization: request.specialization,
+        qualification: request.qualification,
+        experience_years: request.experienceYears,
+        hospital_clinic: request.hospitalClinic,
+        city: request.city,
+        consultation_mode: request.consultationMode,
+        medical_registration_number: request.medicalRegistrationNumber,
+        agreed_to_terms: request.agreedToTerms,
+        status: 'pending'
+      }])
       .select()
       .single();
 
     if (error) throw new Error(`Failed to create doctor join request: ${error.message}`);
-    return data;
+    return this.mapToDoctorJoinRequest(data);
   }
 
-  async getDoctorJoinRequests(): Promise<any[]> {
+  async getDoctorJoinRequests(): Promise<DoctorJoinRequest[]> {
     const { data, error } = await this.supabase
       .from(this.doctorJoinRequestsTableName)
       .select('*')
       .order('created_at', { ascending: false });
 
     if (error) throw new Error(`Failed to fetch doctor join requests: ${error.message}`);
-    return data || [];
+    return (data || []).map(row => this.mapToDoctorJoinRequest(row));
   }
 
-  async updateDoctorJoinRequestStatus(id: string, status: string): Promise<any> {
+  async updateDoctorJoinRequestStatus(id: string, status: 'approved' | 'rejected'): Promise<DoctorJoinRequest> {
     const { data, error } = await this.supabase
       .from(this.doctorJoinRequestsTableName)
       .update({ status })
@@ -945,7 +960,26 @@ export class SupabaseAdapter implements DatabaseAdapter {
         .upsert([{ email: data.email, role: 'doctor' }], { onConflict: 'email' });
     }
 
-    return data;
+    return this.mapToDoctorJoinRequest(data);
+  }
+
+  private mapToDoctorJoinRequest(row: any): DoctorJoinRequest {
+    return {
+      id: row.id,
+      fullName: row.full_name,
+      email: row.email,
+      phone: row.phone,
+      specialization: row.specialization,
+      qualification: row.qualification,
+      experienceYears: row.experience_years,
+      hospitalClinic: row.hospital_clinic,
+      city: row.city,
+      consultationMode: row.consultation_mode,
+      medicalRegistrationNumber: row.medical_registration_number,
+      agreedToTerms: row.agreed_to_terms,
+      status: row.status,
+      createdAt: row.created_at
+    };
   }
 }
 

@@ -140,6 +140,25 @@ export interface Doctor {
   updatedAt: string;
 }
 
+export interface DoctorJoinRequest {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  specialization: string;
+  qualification: string;
+  experienceYears: number;
+  hospitalClinic: string;
+  city: string;
+  consultationMode: string;
+  medicalRegistrationNumber: string;
+  agreedToTerms: boolean;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+}
+
+export type CreateDoctorJoinRequestInput = Omit<DoctorJoinRequest, 'id' | 'status' | 'createdAt'>;
+
 export type CreateDoctorInput = Omit<
   Doctor,
   "id" | "createdAt" | "updatedAt" | "totalPatients"
@@ -249,9 +268,9 @@ export interface DatabaseAdapter {
   getUserRole(email: string): Promise<string | null>;
 
   // Doctor Join Request operations
-  createDoctorJoinRequest(request: any): Promise<any>;
-  getDoctorJoinRequests(): Promise<any[]>;
-  updateDoctorJoinRequestStatus(id: string, status: string): Promise<any>;
+  createDoctorJoinRequest(request: CreateDoctorJoinRequestInput): Promise<DoctorJoinRequest>;
+  getDoctorJoinRequests(): Promise<DoctorJoinRequest[]>;
+  updateDoctorJoinRequestStatus(id: string, status: 'approved' | 'rejected'): Promise<DoctorJoinRequest>;
 }
 
 

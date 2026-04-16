@@ -3,7 +3,9 @@ import {
   Doctor, 
   CreateDoctorInput, 
   UpdateDoctorInput, 
-  PaginatedResult 
+  PaginatedResult,
+  DoctorJoinRequest,
+  CreateDoctorJoinRequestInput
 } from '../database/interfaces';
 
 export class DoctorRepository {
@@ -37,15 +39,15 @@ export class DoctorRepository {
     return this.dbAdapter.getUserRole(email);
   }
 
-  async createJoinRequest(request: any): Promise<any> {
+  async createJoinRequest(request: CreateDoctorJoinRequestInput): Promise<DoctorJoinRequest> {
     return this.dbAdapter.createDoctorJoinRequest(request);
   }
 
-  async getJoinRequests(): Promise<any[]> {
+  async getJoinRequests(): Promise<DoctorJoinRequest[]> {
     return this.dbAdapter.getDoctorJoinRequests();
   }
 
-  async updateJoinRequestStatus(id: string, status: string): Promise<any> {
+  async updateJoinRequestStatus(id: string, status: 'approved' | 'rejected'): Promise<DoctorJoinRequest> {
     return this.dbAdapter.updateDoctorJoinRequestStatus(id, status);
   }
 }

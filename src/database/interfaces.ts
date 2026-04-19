@@ -261,8 +261,15 @@ export interface DatabaseAdapter {
 
   // Appointment operations
   createAppointment(appointment: CreateAppointmentInput): Promise<Appointment>;
-  getAppointmentsByUser(userId: string): Promise<Appointment[]>;
+  getUserAppointments(userId: string): Promise<Appointment[]>;
+  getDoctorAppointments(doctorId: string): Promise<Appointment[]>;
+  getAllAppointments(): Promise<Appointment[]>;
   updateAppointmentStatus(id: string, status: Appointment['status']): Promise<Appointment>;
+  deleteAppointment(id: string): Promise<void>;
+
+  // Earning operations
+  getDoctorEarnings(doctorId: string): Promise<DoctorEarning[]>;
+  addDoctorEarning(earning: CreateDoctorEarningInput): Promise<DoctorEarning>;
 
   // Role operations
   getUserRole(email: string): Promise<string | null>;
@@ -271,15 +278,24 @@ export interface DatabaseAdapter {
   createDoctorJoinRequest(request: CreateDoctorJoinRequestInput): Promise<DoctorJoinRequest>;
   getDoctorJoinRequests(): Promise<DoctorJoinRequest[]>;
   updateDoctorJoinRequestStatus(id: string, status: 'approved' | 'rejected'): Promise<DoctorJoinRequest>;
+
+  // Auth & OTP operations
+  saveOtp(email: string, otp: string, expiresAt: Date): Promise<void>;
+  verifyOtp(email: string, otp: string): Promise<boolean>;
+  updatePassword(email: string, hashedPassword: string): Promise<void>;
+  upsertUserRole(email: string, role: string): Promise<void>;
 }
 
 
 export interface Appointment {
   id: string;
   userId: string;
+  doctorId?: string;
   doctorName: string;
+  patientName?: string;
+  patientEmail?: string;
   appointmentDate: string; // ISO string
-  status: 'scheduled' | 'cancelled' | 'completed';
+  status: 'pending' | 'approved' | 'rejected' | 'completed' | 'incomplete' | 'scheduled' | 'cancelled';
   notes?: string;
   createdAt: string;
   updatedAt: string;
@@ -287,8 +303,31 @@ export interface Appointment {
 
 export interface CreateAppointmentInput {
   userId: string;
+  doctorId?: string;
   doctorName: string;
+  patientName?: string;
+  patientEmail?: string;
   appointmentDate: string;
-  status?: 'scheduled' | 'cancelled' | 'completed';
+  status?: 'pending' | 'approved' | 'rejected' | 'completed' | 'incomplete' | 'scheduled' | 'cancelled';
   notes?: string;
+}
+
+export interface DoctorEarning {
+  id: string;
+  doctorId: string;
+  appointmentId?: string;
+  amount: number;
+  status: 'pending' | 'processed' | 'withdrawn';
+  description?: string;
+  date: string;
+  createdAt: string;
+}
+
+export interface CreateDoctorEarningInput {
+  doctorId: string;
+  appointmentId?: string;
+  amount: number;
+  status: 'pending' | 'processed';
+  description?: string;
+  date: string;
 }

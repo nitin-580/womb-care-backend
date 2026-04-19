@@ -8,12 +8,16 @@ import { UserProfileRepository } from "../repositories/userProfileRepository";
 import { CreateDoctorInput, UpdateDoctorInput } from "../database/interfaces";
 import { sendWelcomeMail } from "../lib/sendWelcomeMail";
 import { sendDoctorApplicationMail, sendDoctorApprovalMail } from "../lib/sendDoctorMails";
+import { AppointmentRepository } from "../repositories/appointmentRepository";
+import { EarningsRepository } from "../repositories/earningsRepository";
 
 export class DoctorController {
   constructor(
     private doctorRepo: DoctorRepository,
     private patientRepo: PatientRepository,
-    private profileRepo: UserProfileRepository
+    private profileRepo: UserProfileRepository,
+    private appointmentRepo: AppointmentRepository,
+    private earningsRepo: EarningsRepository
   ) {}
 
   signupDoctor = async (req: Request, res: Response): Promise<void> => {
@@ -44,6 +48,10 @@ export class DoctorController {
       };
 
       const doctor = await this.doctorRepo.create(doctorData);
+      
+      // Sync to user_roles as 'doctor'
+      await this.doctorRepo.upsertUserRole(doctor.email, 'doctor').catch(console.error);
+
       sendWelcomeMail(doctor.email, doctor.name).catch(console.error);
 
       const { password: _, ...doctorResponse } = doctor as any;
@@ -196,11 +204,8 @@ export class DoctorController {
       const data = await this.doctorRepo.updateJoinRequestStatus(id, status);
       
       if (status === 'approved') {
-        // Step 1: Generate temporary password
         const tempPassword = `WC@${Math.floor(1000 + Math.random() * 9000)}`;
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
-
-        // Step 2: Create user account in the users/doctors table
         await this.doctorRepo.create({
           name: data.fullName,
           email: data.email,
@@ -210,12 +215,53 @@ export class DoctorController {
           credentials: data.qualification,
           referralCode: 'DOC' + Math.floor(100000 + Math.random() * 900000)
         });
-
-        // Step 3: Send approval mail with temporary password
         sendDoctorApprovalMail(data.email, data.fullName, tempPassword).catch(console.error);
       }
-      
       res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  };
+
+  getDoctorAppointments = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const doctorId = req.user?.id;
+      if (!doctorId) {
+        res.status(401).json({ success: false, message: "Unauthorized" });
+        return;
+      }
+      const appointments = await this.appointmentRepo.getByDoctorId(doctorId);
+      res.status(200).json({ success: true, appointments });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  };
+
+  updateAppointmentStatus = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const doctorId = req.user?.id;
+      const { appointmentId, status } = req.body;
+      if (!doctorId) {
+        res.status(401).json({ success: false, message: "Unauthorized" });
+        return;
+      }
+      const updated = await this.appointmentRepo.updateStatus(appointmentId, status);
+      res.status(200).json({ success: true, message: `Status updated to ${status}`, appointment: updated });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  };
+
+  getDoctorEarnings = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const doctorId = req.user?.id;
+      if (!doctorId) {
+        res.status(401).json({ success: false, message: "Unauthorized" });
+        return;
+      }
+      const earnings = await this.earningsRepo.getByDoctorId(doctorId);
+      const totalEarnings = earnings.reduce((acc, curr) => acc + curr.amount, 0);
+      res.status(200).json({ success: true, earnings, totalEarnings });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
     }

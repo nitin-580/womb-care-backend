@@ -18,6 +18,11 @@ export class EarlyAccessService {
     // 2. Persist user to database
     const user = await this.userRepository.create(userData);
 
+    // 2.5 Sync to user_roles as 'user'
+    await this.userRepository.upsertUserRole(user.email, 'user').catch((err) => {
+      logger.error(`Failed to sync role for ${user.email}:`, err);
+    });
+
     // 3. Trigger welcome email using Resend utility
     sendWelcomeMail(user.email, user.name).catch((err) => {
       logger.error(`Failed to send welcome email to ${user.email}:`, err);

@@ -8,10 +8,22 @@ export class AppointmentRepository {
   }
 
   async getByUserId(userId: string): Promise<Appointment[]> {
-    return this.dbAdapter.getAppointmentsByUser(userId);
+    return this.dbAdapter.getUserAppointments(userId);
+  }
+
+  async getByDoctorId(doctorId: string): Promise<Appointment[]> {
+    return this.dbAdapter.getDoctorAppointments(doctorId);
+  }
+
+  async getAll(): Promise<Appointment[]> {
+    return this.dbAdapter.getAllAppointments();
   }
 
   async updateStatus(id: string, status: Appointment['status']): Promise<Appointment> {
     return this.dbAdapter.updateAppointmentStatus(id, status);
+  }
+
+  async delete(id: string): Promise<void> {
+    return this.dbAdapter.deleteAppointment(id);
   }
 }

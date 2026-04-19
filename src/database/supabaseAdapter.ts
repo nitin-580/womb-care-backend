@@ -40,6 +40,8 @@ export class SupabaseAdapter implements DatabaseAdapter {
   private readonly appointmentsTableName = 'wombcare_appointments';
   private readonly userRolesTableName = 'user_roles';
   private readonly doctorJoinRequestsTableName = 'doctor_join_requests';
+  private readonly otpTableName = 'password_reset_otps';
+  private readonly doctorEarningsTableName = 'wombcare_doctor_earnings';
 
   constructor() {
     this.supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
@@ -837,7 +839,10 @@ export class SupabaseAdapter implements DatabaseAdapter {
       .from(this.appointmentsTableName)
       .insert({
         user_id: appointment.userId,
+        doctor_id: appointment.doctorId,
         doctor_name: appointment.doctorName,
+        patient_name: appointment.patientName,
+        patient_email: appointment.patientEmail,
         appointment_date: appointment.appointmentDate,
         status: appointment.status || 'scheduled',
         notes: appointment.notes
@@ -852,7 +857,7 @@ export class SupabaseAdapter implements DatabaseAdapter {
     return this.mapToAppointment(data);
   }
 
-  async getAppointmentsByUser(userId: string): Promise<Appointment[]> {
+  async getUserAppointments(userId: string): Promise<Appointment[]> {
     const { data, error } = await this.supabase
       .from(this.appointmentsTableName)
       .select('*')
@@ -864,6 +869,33 @@ export class SupabaseAdapter implements DatabaseAdapter {
     }
 
     return data.map((row: any) => this.mapToAppointment(row));
+  }
+
+  async getDoctorAppointments(doctorId: string): Promise<Appointment[]> {
+    const { data, error } = await this.supabase
+      .from(this.appointmentsTableName)
+      .select('*')
+      .eq('doctor_id', doctorId)
+      .order('appointment_date', { ascending: true });
+
+    if (error) {
+      throw new Error(`Failed to fetch doctor appointments: ${error.message}`);
+    }
+
+    return (data || []).map((row: any) => this.mapToAppointment(row));
+  }
+
+  async getAllAppointments(): Promise<Appointment[]> {
+    const { data, error } = await this.supabase
+      .from(this.appointmentsTableName)
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to fetch all appointments: ${error.message}`);
+    }
+
+    return (data || []).map((row: any) => this.mapToAppointment(row));
   }
 
   async updateAppointmentStatus(id: string, status: Appointment['status']): Promise<Appointment> {
@@ -881,16 +913,84 @@ export class SupabaseAdapter implements DatabaseAdapter {
     return this.mapToAppointment(data);
   }
 
+  async deleteAppointment(id: string): Promise<void> {
+    const { error } = await this.supabase
+      .from(this.appointmentsTableName)
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(`Failed to delete appointment: ${error.message}`);
+    }
+  }
+
   private mapToAppointment(row: any): Appointment {
     return {
       id: row.id,
       userId: row.user_id,
+      doctorId: row.doctor_id,
       doctorName: row.doctor_name,
+      patientName: row.patient_name,
+      patientEmail: row.patient_email,
       appointmentDate: row.appointment_date,
       status: row.status,
       notes: row.notes,
       createdAt: row.created_at,
       updatedAt: row.updated_at
+    };
+  }
+
+  // Earning operations
+  async getDoctorEarnings(doctorId: string): Promise<DoctorEarning[]> {
+    const { data, error } = await this.supabase
+      .from(this.doctorEarningsTableName)
+      .select('*')
+      .eq('doctor_id', doctorId)
+      .order('date', { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to fetch doctor earnings: ${error.message}`);
+    }
+
+    return (data || []).map((row: any) => ({
+      id: row.id,
+      doctorId: row.doctor_id,
+      appointmentId: row.appointment_id,
+      amount: row.amount,
+      status: row.status,
+      description: row.description,
+      date: row.date,
+      createdAt: row.created_at
+    }));
+  }
+
+  async addDoctorEarning(earning: CreateDoctorEarningInput): Promise<DoctorEarning> {
+    const { data, error } = await this.supabase
+      .from(this.doctorEarningsTableName)
+      .insert({
+        doctor_id: earning.doctorId,
+        appointment_id: earning.appointmentId,
+        amount: earning.amount,
+        status: earning.status,
+        description: earning.description,
+        date: earning.date
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to add doctor earning: ${error.message}`);
+    }
+
+    return {
+      id: data.id,
+      doctorId: data.doctor_id,
+      appointmentId: data.appointment_id,
+      amount: data.amount,
+      status: data.status,
+      description: data.description,
+      date: data.date,
+      createdAt: data.created_at
     };
   }
 
@@ -981,5 +1081,42 @@ export class SupabaseAdapter implements DatabaseAdapter {
       createdAt: row.created_at
     };
   }
-}
 
+  async saveOtp(email: string, otp: string, expiresAt: Date): Promise<void> {
+    const { error } = await this.supabase
+      .from(this.otpTableName)
+      .upsert({ email, otp, expires_at: expiresAt.toISOString() }, { onConflict: 'email' });
+
+    if (error) throw new Error(`Failed to save OTP: ${error.message}`);
+  }
+
+  async verifyOtp(email: string, otp: string): Promise<boolean> {
+    const { data, error } = await this.supabase
+      .from(this.otpTableName)
+      .select('*')
+      .eq('email', email)
+      .eq('otp', otp)
+      .gt('expires_at', new Date().toISOString())
+      .maybeSingle();
+
+    if (error || !data) return false;
+    return true;
+  }
+
+  async updatePassword(email: string, hashedPassword: string): Promise<void> {
+    const { error } = await this.supabase
+      .from(this.doctorsTableName) // Doctors/Users table
+      .update({ password: hashedPassword, updated_at: new Date().toISOString() })
+      .eq('email', email);
+
+    if (error) throw new Error(`Failed to update password: ${error.message}`);
+  }
+
+  async upsertUserRole(email: string, role: string): Promise<void> {
+    const { error } = await this.supabase
+      .from(this.userRolesTableName)
+      .upsert({ email, role }, { onConflict: 'email' });
+
+    if (error) throw new Error(`Failed to upsert user role: ${error.message}`);
+  }
+}

@@ -15,7 +15,19 @@ export class AppointmentService {
     return this.appointmentRepository.getByUserId(userId);
   }
 
+  async getAllAppointments(): Promise<Appointment[]> {
+    return this.appointmentRepository.getAll();
+  }
+
   async cancelAppointment(id: string): Promise<Appointment> {
     return this.appointmentRepository.updateStatus(id, 'cancelled');
+  }
+
+  async updateAppointmentStatus(id: string, status: Appointment['status']): Promise<Appointment> {
+    return this.appointmentRepository.updateStatus(id, status);
+  }
+
+  async deleteAppointment(id: string): Promise<void> {
+    return this.appointmentRepository.delete(id);
   }
 }

@@ -63,7 +63,7 @@ export const sendDoctorApprovalMail = async (email: string, name: string, tempPa
               </div>
 
               <div style="margin-top: 32px; text-align: center;">
-                <a href="https://remedy.wombcare.live/login" style="background-color: #be185d; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">Go to Dashboard</a>
+                <a href="https://wombcare.in/login" style="background-color: #be185d; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">Go to Dashboard</a>
               </div>
               <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb; text-align: center;">
                 <p style="color: #6b7280; font-size: 14px;">Welcome aboard!</p>

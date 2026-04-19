@@ -18,4 +18,8 @@ export class UserRepository {
   async getPaginatedUsers(page: number, limit: number): Promise<PaginatedResult<User>> {
     return this.dbAdapter.getPaginatedUsers(page, limit);
   }
+
+  async upsertUserRole(email: string, role: string): Promise<void> {
+    return this.dbAdapter.upsertUserRole(email, role);
+  }
 }

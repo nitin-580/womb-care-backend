@@ -50,4 +50,20 @@ export class DoctorRepository {
   async updateJoinRequestStatus(id: string, status: 'approved' | 'rejected'): Promise<DoctorJoinRequest> {
     return this.dbAdapter.updateDoctorJoinRequestStatus(id, status);
   }
+
+  async saveOtp(email: string, otp: string, expiresAt: Date): Promise<void> {
+    return this.dbAdapter.saveOtp(email, otp, expiresAt);
+  }
+
+  async verifyOtp(email: string, otp: string): Promise<boolean> {
+    return this.dbAdapter.verifyOtp(email, otp);
+  }
+
+  async updatePassword(email: string, hashedPassword: string): Promise<void> {
+    return this.dbAdapter.updatePassword(email, hashedPassword);
+  }
+
+  async upsertUserRole(email: string, role: string): Promise<void> {
+    return this.dbAdapter.upsertUserRole(email, role);
+  }
 }
